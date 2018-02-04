@@ -1,0 +1,190 @@
+---
+title: "DATA_605_Assignment_1_Thonn"
+file: GIyengar_DATA_605_Assign1_Thonn
+name: Daniel Thonn
+output:
+  html_document: default
+  pdf_document: default
+course: DATA 605 CUNY MSDA program
+---
+
+** DATA_605_Assignment_1_Thonn **
+
+** Problem Set 1 **
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+(1) Calculate the dot product u.v where u = [0.5; 0.5] and v = [3;-4]
+``````{r, echo=TRUE}
+u <- c(0.5, 0.5)
+
+v <- c(3, -4)
+
+dotprod1 <- u %*% v
+
+dotprod1
+
+```
+
+(2) What are the lengths of u and v?
+``````{r, echo=TRUE}
+
+lengthu <- sqrt(u %*% u)
+lengthu
+
+lengthv <- sqrt(v %*% v)
+lengthv
+
+```
+
+(3) What is the linear combination: 3u - 2v ?
+``````{r, echo=TRUE}
+
+lincombination1 <- 3*u - 2*v
+
+lincombination1
+
+
+```
+
+(4) What is the angle between u and v ?  (radians)
+``````{r, echo=TRUE}
+angle_rad <- acos((u %*% v)/(sqrt(u %*% u)*sqrt(v %*% v)))
+angle_rad
+
+```
+
+** Problem Set 2 **
+
+Set up a system of equations with 3 variables and 3 constraints and solve for x. Please write a function in R that will take two variables (matrix A & constraint vector b) and solve using elimination. Your function should produce the right answer for the system of equations for any 3-variable, 3-equation system. You don't have to worry about degenerate cases and can safely assume that the function will only be tested with a system of equations that has a solution. Please note that you do have to worry about zero pivots, though. Please note that you should not use the built-in function solve to solve this system or use matrix inverses. The approach that you should employ is to construct an Upper Triangular Matrix and then back-substitute to get the solution. Alternatively, you can augment the matrix A with vector b and jointly apply the Gauss Jordan elimination procedure.
+
+Please test it with the system below and is should produce a solution
+x = [-1.55,-0.32,0.95]
+
+A = matrix(c(1, 2, -1, 1, -1, -2, 3, 5, 4), nrow=3, ncol=3)
+b = c(1, 2, 6)
+
+
+``````{r, echo=TRUE}
+
+# Function 1 - swap elements - vector
+elements_swap <- function(v, m, n){
+  a_v <- v[m]
+  v[m] <- v[n]
+  v[n] <- a_v
+  return(v)
+}
+
+# Function 2 - swap rows - matrix
+rows_swap <-function(A, m, n){
+  a  <- A[m,]
+  A[m,] <- A[n,]
+  A[n,] <- a
+  return(A)
+}
+
+# Function 3 - find pivot
+pivot_find <- function (A, r, c){
+# Initialize variables
+  swap_a <- FALSE
+  pv <- 0
+  swap_r <- 0
+  loop1 <- TRUE
+  j <- r
+  #loop thru each matrix and locate non-zero pivot point for column c
+  while(loop1){
+    if(A[j,c] != 0){
+      loop1 <- FALSE
+      pv<-A[j,c]
+      if(j>r){
+        swap_r <- j
+        swap_a <- TRUE
+      }
+    }
+    j <- j + 1
+    if (j > nrow(A)){
+      loop <- FALSE
+    }
+  }
+  return(list(pv, swap_a, swap_r))
+} 
+
+# Main function to Solve equation (3x3)
+solve_main <- function (A, b){
+  # Check input parameters: A, b, and whether row(A) equals length(b)
+  if(missing(A)){
+    stop("matrix A not in form Ax = b")
+  }
+  if(missing(b)){
+    stop("vector b not in form Ax = b")
+  }
+  if(nrow(A) != ncol(A)){
+    stop("A not a square matrix")
+  }
+  if(nrow(A) != length(b)){
+    stop("number of rows of A != dim of b")
+  }
+  num_rows <- nrow(A)
+  num_col <- ncol(A)
+  A1 <- A
+  b1 <- b
+  # Create Upper Triangular Matrix 
+  # Initialize column cursor
+  c <- 1
+  while (c <= num_col){
+    # Initialize row cursor
+    r <- c
+    # find pivot point
+    l_result <- pivot_find (A1, r, c)
+    p <- unlist(l_result[1])
+    swap_indicator <- unlist(l_result[2])
+    swap_row <- unlist(l_result[3])
+    # Validate that pivot point exists
+    if (p==0){
+      text <- "No pivot point found in column"
+      txt_col <- as.character(c)
+      msg <- paste(text,txt_col)
+      stop(msg)
+    }
+    # if pivot point check for swap
+    if(swap_indicator){
+      A1 <- rows_swap(A1,r,swap_row)
+      b1 <- elements_swap (b1, r, swap_row)
+    }
+    # Process elimination for each row
+    k <- r + 1
+    while (k <= num_rows){
+      # multiplier check
+      m = A1[k,c]/p
+      A1[k, ] <- A1[k, ] - m*A1[r, ]
+      b1[k] <- b1[k] - m*b1[r]
+      k <- k + 1
+    } # end loop rows
+    c <- c + 1
+  } # end loop columns
+  
+  # Solve equations
+  equation_v <- vector()
+  i <- num_col
+  equation_v[i] <- b1[i]/A1[i,i]
+  z<- b1[3]/A1[3,3]
+  y<- (b1[2] - A1[2,3]*z)/A1[2,2]
+  x<- (b1[1] - A1[1,2]*y - A1[1,3]*z)/A1[1,1]
+  result1 <- c(round(x, digits = 2), round(y, digits = 2), round(z, digits = 2))
+  return(result1)
+}
+
+# Test the Main Function #
+A = matrix(c(1, 2, -1, 1, -1, -2, 3, 5, 4), nrow=3, ncol=3)
+b = c(1, 2, 6)
+result <- solve_main(A,b)
+# actual result:
+result
+# expected result: [1] -1.55 -0.32  0.95
+
+```
+
+
+**END**
